@@ -4,6 +4,7 @@ function endResize() {
     window.removeEventListener('mousemove', mouseMove());
     window.removeEventListener("mouseup", endResize());
 
+
     //document.getElementById('heading-row').style.cursor = 'auto';
 };
 

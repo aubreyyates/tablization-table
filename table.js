@@ -1,14 +1,24 @@
 class Table {
 
-    constructor(items, tableDiv, columns = [200, 200, 200, 200], rows = { height: 40 }) {
-        this.columns = columns;
-        this.numColumns = columns.length;
-        this.items = items;
-        this.tableDiv = tableDiv;
-        this.rows = rows;
-        this.selectedHeader = null;
-        this.columnObjects = [[], [], [], []];
+    constructor(items, tableDivId, columnWidths, columnsNames, rowConfig, buttons, buttonFunctions) {
 
+        this.items = items;
+        this.tableDivId = tableDivId;
+        this.columnWidths = columnWidths;
+        this.columnsNames = columnsNames;
+        this.rowConfig = rowConfig;
+        this.buttons = buttons;
+        this.buttonFunctions = buttonFunctions;
+        // this.numColumns = columns.length;
+
+        this.tableDiv = document.getElementById(tableDivId);
+        this.columns;
+
+        // Temp code
+        this.numColumns = this.columnWidths.length;
+        this.rowWidth = this.columnWidths.reduce((a, b) => a + b, 0) + buttons.length * 40;
+        this.columnCells = [];
+        this.rows = [];
     }
 
     updateItems(items) {
@@ -17,133 +27,123 @@ class Table {
             return;
         }
         this.items = items;
-        // this.draw();
+        this.draw();
     }
 
     draw() {
 
-        let html = this.getHtml();
-        let tableNode = document.createElement('div');
-
-        tableNode.innerHTML = html;
-        tableNode.className = 'tabilization-table';
-        let tableDiv = document.getElementById(this.tableDiv);
-        tableDiv.innerHTML = '';
-        tableDiv.append(tableNode);
-
-        let elements = document.getElementsByClassName("table-cell-input");
-
-        Array.from(elements).forEach(function (element) {
-            element.addEventListener('input', () => {
-                let id = element.getAttribute('data-row-id')
-                let key = element.getAttribute('data-key')
-                let value = element.value;
-                items.forEach(function (item) {
-                    if (item.id == id) {
-                        item[key] = value;
-                    };
-                })
-            }, false);
-        });
-
-        let resizeHandles = document.getElementsByClassName("resize-handle");
-
-        // Array.from(resizeHandles).forEach(function (handle) {
-        //     handle.addEventListener('mousedown', () => {
-        //         console.log("mousedown");
-        //         document.body.addEventListener('mouseup', function endResize() {
-        //             console.log("mouseup");
-        //             document.body.removeEventListener('mouseup', endResize);
-        //         });
-
-        //         document.body.addEventListener('mousemove', function mouseMoveEvent() {
-        //             console.log("mousemove");
-        //         });
-
-        //     });
-        // });
+        this.clearTable();
+        let table = this.createTable();
+        this.tableDiv.append(table);
 
     }
 
 
 
     resizeColumn(columnNum, newWidth) {
-        let array = this.columnObjects[columnNum];
+        let array = this.columnCells[columnNum];
+
         array.forEach(function (cell) {
-            cell.cellNode.style.width = (newWidth + "px");
+            cell.cell.style.width = (newWidth + "px");
         });
+
+        this.columnWidths[columnNum] = newWidth;
+        let rowWidth = this.columnWidths.reduce((a, b) => a + b, 0);
+
+        this.rows.forEach(function (row) {
+            row.row.style.width = (rowWidth) + "px";
+        })
+
+        this.rowWidth = rowWidth;
     }
 
 
     clearTable() {
-        document.getElementById(this.tableDiv).innerHTML = '';
-        return;
+        this.tableDiv.innerHTML = '';
     }
 
     createTable() {
 
         let row;
-        let columnObjects = [];
         for (let i = 0; i < this.numColumns; i++) {
-            columnObjects.push([]);
+            this.columnCells.push([]);
         }
 
-        let tableNode = document.createElement('div');
-        tableNode.className = 'tabilization-table';
+        let table = document.createElement('div');
+        table.className = 'tabilization-table';
+
+        let header = this.createHeader();
+        table.append(header);
+
+        let columnCells = this.columnCells;
 
         // Make header row
         this.items.forEach((item) => {
-            row = new Row(item, this.columns, this.rows.height)
-            tableNode.append(row.getRow());
+            row = new Row(item, this.columnWidths, this.columnsNames, this.rowWidth, this.rowConfig, this.buttons, this.buttonFunctions);
+            this.rows.push(row);
+            table.append(row.getRow());
             let cellsCreated = row.getColumns();
             cellsCreated.forEach(function (cell, i) {
-                columnObjects[i].push(cell);
+                columnCells[i].push(cell);
             });
         });
 
-        this.clearTable();
-        let tableDiv = document.getElementById(this.tableDiv);
-        tableDiv.append(tableNode);
+        this.columnCells = columnCells;
 
-        this.columnObjects = columnObjects;
+        return table;
 
 
     }
 
-    getTable() {
+    createHeader() {
+        let row = new Row([], this.columnWidths, this.columnsNames, this.rowWidth, this.rowConfig);
+        this.rows.push(row);
+        let header = row.getHeaderRow();
+        let cellsCreated = row.getColumns();
+        let columnCells = this.columnCells;
 
-    }
-
-    getHtml() {
-        let html = ``;
-        let row;
-        let count = 0;
-        let columnObjects = []
-
-        // Make header row
-        if (this.items.length > 0) {
-            row = new Row(items[0], this.columns, this.rows.height)
-            html += row.getHeaderHtml();
-            let cellsCreated = row.getColumns();
-            cellsCreated.forEach(function (cell) {
-                columnObjects.push([cell]);
-            });
-        }
-
-
-        // Make data rows
-        this.items.forEach((item) => {
-            row = new Row(item, this.columns, this.rows.height)
-            html += row.getHtml();
-            let cellsCreated = row.getColumns();
-            cellsCreated.forEach(function (cell, i) {
-                columnObjects[i].push(cell);
-            });
+        cellsCreated.forEach(function (cell, i) {
+            columnCells[i].push(cell);
         });
 
-        this.columnObjects = columnObjects;
-
-        return html;
+        this.columnCells = columnCells;
+        return header;
     }
+
+    // getTable() {
+
+    // }
+
+    // getHtml() {
+    //     let html = ``;
+    //     let row;
+    //     let count = 0;
+    //     let columnCells = []
+
+    //     // Make header row
+    //     if (this.items.length > 0) {
+    //         row = new Row(items[0], this.columns, this.rows.height)
+    //         html += row.getHeaderHtml();
+    //         let cellsCreated = row.getColumns();
+    //         cellsCreated.forEach(function (cell) {
+    //             columnCells.push([cell]);
+    //         });
+    //     }
+
+
+    //     // Make data rows
+    //     this.items.forEach((item) => {
+    //         row = new Row(item, this.columns, this.rows.height)
+    //         html += row.getHtml();
+    //         let cellsCreated = row.getColumns();
+    //         cellsCreated.forEach(function (cell, i) {
+    //             columnCells[i].push(cell);
+    //         });
+    //     });
+
+    //     this.columnCells = columnCells;
+
+    //     return html;
+    // }
 
 }

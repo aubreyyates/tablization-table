@@ -1,56 +1,46 @@
 class Cell {
 
-    constructor(data, key, height, width, columnId, rowId) {
+    constructor(data, key, height, width, rowId, item) {
         this.height = height;
         this.width = width;
-        this.columnId = columnId;
         this.data = data;
         this.key = key;
         this.rowId = rowId;
+        this.item = item;
         this.createCell();
     }
 
     createCell() {
-        this.cellNode = document.createElement('div');
-        this.cellNode.className = 'table-cell';
-        this.cellNode.style.width = (this.width + 'px');
-        this.cellNode.innerHTML = `<input data-row-id='${this.rowId}' data-key='${this.key}' class='table-cell-input' value='${this.data}'>`;
+        this.cell = document.createElement('div');
+        this.cell.className = 'table-cell';
+        this.cell.style.width = (this.width + 'px');
+
+        let input = document.createElement('input');
+        input.value = this.data;
+        input.addEventListener('input', (e) => {
+            this.item[this.key] = e.target.value;
+        }, false)
+
+        this.cell.append(input);
+        //this.cell.innerHTML = `<input data-row-id='${this.rowId}' data-key='${this.key}' class='table-cell-input' value='${this.data}'>`;
+
     }
 
     getCell() {
-        return this.cellNode;
+        this.createCell();
+        return this.cell;
+    }
+
+    createHeaderCell() {
+        this.cell = document.createElement('div');
+        this.cell.className = 'table-cell heading-cell';
+        this.cell.style.width = (this.width + 'px');
+        this.cell.innerHTML = `${this.key}`;
     }
 
 
-
-    getHtml() {
-
-        let html =
-            `
-                <div class='table-cell' style='width:${this.width}px;'>
-                    <input data-rowId='${this.rowId}' data-key='${this.key}' class='table-cell-input' value='${this.data}'>
-                </div >
-            `;
-
-        return html;
-
+    getHeaderCell() {
+        this.createHeaderCell();
+        return this.cell;
     }
-
-    getHeaderHtml() {
-        let html =
-            `
-                <div class='table-cell heading-cell' style='width:${this.width}px;'>
-                    <div class='header-cell-text'><p>${this.key}</p></div>
-                    <div class='resize-handle'></div>
-                </div>
-            `;
-
-        return html;
-    }
-
-
-
-    // input() {
-    //     if ()
-    // }
 }
