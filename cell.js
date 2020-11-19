@@ -17,6 +17,7 @@ class Cell {
 
         let input = document.createElement('input');
         input.value = this.data;
+        input.readOnly = true;
         input.addEventListener('input', (e) => {
             this.item[this.key] = e.target.value;
         }, false)

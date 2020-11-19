@@ -1,29 +1,41 @@
 class Table {
 
-    constructor(items, tableDivId, columnWidths, columnsNames, rowConfig, buttons, buttonFunctions) {
+    constructor({ items = [], tableDivId = 'table-div', columnConfig = {}, rowConfig = [], buttons = [], buttonFunctions = [], rowClickFunction = null, rowDisplayLimit = null } = {}) {
 
         this.items = items;
         this.tableDivId = tableDivId;
+        this.tableDiv = document.getElementById(tableDivId);
+        this.rowDisplayLimit = rowDisplayLimit;
+
+        // Column Configuration
+        let { objectProperties, columnWidths, columnNames } = columnConfig;
         this.columnWidths = columnWidths;
-        this.columnsNames = columnsNames;
+        this.columnNames = columnNames;
+        this.properties = objectProperties;
+
+        // Row Configuration
         this.rowConfig = rowConfig;
         this.buttons = buttons;
         this.buttonFunctions = buttonFunctions;
-        // this.numColumns = columns.length;
+        this.rowClickFunction = rowClickFunction;
 
-        this.tableDiv = document.getElementById(tableDivId);
-        this.columns;
-
-        // Temp code
+        // Column Configuration
         this.numColumns = this.columnWidths.length;
-        this.rowWidth = this.columnWidths.reduce((a, b) => a + b, 0) + buttons.length * 40;
+        this.rowWidth = this.columnWidths.reduce((a, b) => a + b, 0) + (buttons.length * 40);
         this.columnCells = [];
         this.rows = [];
     }
 
     updateItems(items) {
         if (items.length == 0) {
-            document.getElementById(this.tableDiv).innerHTML = '';
+            this.items = items;
+            this.tableDiv.innerHTML = '';
+            let table = this.createTable();
+            this.tableDiv.append(table);
+            let row = document.createElement('div');
+            row.className = 'table-row-no-results';
+            row.innerHTML = 'No Results';
+            this.tableDiv.append(row);
             return;
         }
         this.items = items;
@@ -35,7 +47,16 @@ class Table {
         this.clearTable();
         let table = this.createTable();
         this.tableDiv.append(table);
+        if (this.items.length == 0) {
+            let row = document.createElement('div');
+            row.className = 'table-row-no-results';
+            row.innerHTML = 'No Results';
+            this.tableDiv.append(row);
+        }
 
+        let pagination = new Pagination(0);
+        let paginationButtons = pagination.get();
+        this.tableDiv.append(paginationButtons);
     }
 
 
@@ -72,21 +93,46 @@ class Table {
         let table = document.createElement('div');
         table.className = 'tabilization-table';
 
+        let tableMainSection = document.createElement('div');
+        let tableButtonSection = document.createElement('div');
+
         let header = this.createHeader();
-        table.append(header);
+        tableMainSection.append(header);
+        tableMainSection.className = 'table-main-section';
 
         let columnCells = this.columnCells;
 
+        // Row height needs to be a variable!
+
         // Make header row
-        this.items.forEach((item) => {
-            row = new Row(item, this.columnWidths, this.columnsNames, this.rowWidth, this.rowConfig, this.buttons, this.buttonFunctions);
+
+        this.items.forEach((item, i) => {
+            row = new Row(item, this.properties, this.columnWidths, this.columnNames, this.rowWidth, this.rowConfig, this.buttons, this.buttonFunctions, this.rowClickFunction);
             this.rows.push(row);
-            table.append(row.getRow());
+            tableMainSection.append(row.getRow());
             let cellsCreated = row.getColumns();
             cellsCreated.forEach(function (cell, i) {
                 columnCells[i].push(cell);
             });
+
+            let buttonsDiv = document.createElement('div');
+            buttonsDiv.style.top = (i * 41 + 42) + "px";
+            buttonsDiv.className = 'row-buttons-div';
+            for (let i = 0; i < this.buttons.length; i++) {
+                let button = document.createElement('button');
+                button.className = this.buttons[i] + ' table-button';
+                button.addEventListener("click", () => {
+                    this.buttonFunctions[i](item);
+                }, false);
+                buttonsDiv.append(button);
+            }
+            tableButtonSection.append(buttonsDiv);
         });
+
+        table.append(tableMainSection);
+        table.append(tableButtonSection);
+
+
 
         this.columnCells = columnCells;
 
@@ -96,7 +142,7 @@ class Table {
     }
 
     createHeader() {
-        let row = new Row([], this.columnWidths, this.columnsNames, this.rowWidth, this.rowConfig);
+        let row = new Row([], [], this.columnWidths, this.columnNames, this.rowWidth, this.rowConfig);
         this.rows.push(row);
         let header = row.getHeaderRow();
         let cellsCreated = row.getColumns();
